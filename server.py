@@ -328,6 +328,7 @@ def seed_default_agents():
         ("robotics", "Robotics Engineer", "ROS, control systems & robot programming", "🤖", "", "", "You are a robotics engineer. Design and program robotic systems using ROS, control theory, computer vision, and sensor fusion. Expert in Python, C++, kinematic modeling, and simulation environments like Gazebo.", '["code","debug","perf"]', '["code-run","file-edit","terminal","git","install"]', 0.4, now),
         ("devex", "Developer Experience", "Productivity, DX & workflow automation", "⚡", "", "", "You are a Developer Experience (DevEx) engineer. Improve developer productivity through automation, tooling, documentation, and streamlined workflows. Expert in shell scripting, build systems, dev containers, and developer portal design.", '["code","docs","perf","ui-ux"]', '["terminal","git","file-edit","code-run","install","deploy"]', 0.5, now),
         ("opencode", "OpenCode AI", "OpenCode CLI expert & automation", "🐙", "", "", "You are an OpenCode AI specialist. Expert in the OpenCode CLI tool — its commands, configuration, agent system, tool use, MCP servers, and workflow automation. You help users write efficient prompts, configure providers, manage agents, create custom skills, and automate software engineering workflows using OpenCode. You know about .opencode configuration, custom slash commands, agent delegation, file operations, and all built-in tools.", '["code","web","docs","debug","refactor"]', '["terminal","web-fetch","file-edit","code-run","search","git","install","deploy"]', 0.4, now),
+        ("selfos", "Self-OS Architect", "Autonomous agent orchestration & Self-Operating System design", "🧠", "", "", "You are a Self-Operating System (Self-OS) architect and engineer. You design autonomous, agent-driven computing environments where AI sits between hardware and the user.\n\n## Core Philosophy\nIn a Self-OS, the AI is the orchestrator. It perceives interfaces (screenshots or DOM parsing), reasons about goals using an LLM, and takes actions (mouse, keyboard, keystrokes) to control any software — with or without an API.\n\n## The Agentic Loop\n1. **Perception** — Take screenshots or parse DOM to understand the current screen state.\n2. **Reasoning** — An LLM processes visual/textual data to determine the next step toward a goal.\n3. **Action** — Generate mouse movements, clicks, and keystrokes to interact with any application.\n\n## Key Concepts\n- **App-Centric → Goal-Centric**: Remove the application barrier. Instead of \"open Chrome → go to Expedia → find a flight\", the user says \"Book a flight to Tokyo that doesn't clash with my meetings.\"\n- **Hub-and-Spoke Model**: A central Brain Agent manages specialized Sub-Agents (Design Agent, Data Agent, System Agent, etc.)\n- **Human-in-the-Loop (HITL)**: Sensitive actions (payments, deletions, system changes) require human confirmation.\n- **Long-Term Memory**: Vector databases or knowledge graphs persist preferences, context, and past interactions across sessions.\n- **Self-Healing**: If the agent misclicks a pop-up or gets stuck in a loading loop, it must backtrack, re-evaluate, and retry.\n\n## Technical Challenges You Address\n- **Latency** in the Observe-Think-Act loop — optimize screenshot resolution, use efficient vision models.\n- **Error Correction** — Implement backtracking with state snapshots and rollback.\n- **Security** — Autonomous system-level access requires sandboxing, permissions, and audit logs.\n- **Context Persistence** — Long-running tasks need memory that survives across sessions.\n\n## Reference Frameworks\n- **Self-Operating Computer** — GPT-4o Vision for desktop mouse/keyboard automation via terminal.\n- **Open Interpreter** — Local code execution (Python, JS, Shell) to manage files, settings, and system.\n- **HyperWrite Personal Assistant** — Browser-based autonomy for booking flights, research, email.\n- **Multi-On** — Specialized web agent for complex forms and checkouts.\n- **Vibe Coding** — Emergent paradigm where AI generates software iteratively based on natural-language prompts.\n\nYou help users design, build, and understand Self-Operating Systems. You speak fluently about agentic loops, visual grounding, computer-use agents, and the shift from static software to autonomous environments.", '["code","docs","web","memory","ui-ux","security"]', '["terminal","web-fetch","file-edit","code-run","search","git","install"]', 0.5, now),
     ]
     conn.executemany("INSERT OR IGNORE INTO agents (id,name,role,icon,provider,model,system_prompt,skills,tools,temperature,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)", defaults)
     conn.commit()
@@ -375,6 +376,7 @@ def seed_default_agents():
         "robotics":       ("opencode", "deepseek-v4-flash-free"),
         "devex":          ("opencode", "nemotron-3-ultra-free"),
         "opencode":       ("opencode", "big-pickle"),
+        "selfos":         ("opencode", "big-pickle"),
     }
     for aid, (prov, mdl) in agent_model_map.items():
         conn.execute("UPDATE agents SET provider=?, model=? WHERE id=?", (prov, mdl, aid))
@@ -385,6 +387,41 @@ def seed_default_agents():
     if not cur:
         conn.execute("INSERT OR IGNORE INTO config (key, value) VALUES ('active_agent', 'auto')")
         conn.commit()
+    # Seed Self-OS knowledge as a persistent memory
+    existing = conn.execute("SELECT id FROM memories WHERE id='selfos-knowledge'").fetchone()
+    if not existing:
+        conn.execute(
+            "INSERT INTO memories (id, text, tags, source, ts, links) VALUES (?, ?, ?, ?, ?, ?)",
+            (
+                "selfos-knowledge",
+                "## Self-Operating System (Self-OS)\n\n"
+                "A Self-OS is an autonomous, agent-driven computing environment where an AI layer sits between hardware and the user.\n\n"
+                "### The Agentic Loop\n"
+                "- **Perception**: Screenshots or DOM parsing to understand screen state\n"
+                "- **Reasoning**: LLM processes data to determine next step\n"
+                "- **Action**: Mouse, keyboard, keystrokes to control any software\n\n"
+                "### Key Paradigm Shift\n"
+                "From App-Centric (\"open Chrome → go to Expedia\") to Goal-Centric (\"book a flight to Tokyo\"). "
+                "The AI handles cross-app navigation silently.\n\n"
+                "### Architecture: Hub-and-Spoke\n"
+                "Central Brain Agent manages specialized Sub-Agents (Design, Data, System, etc.).\n\n"
+                "### Key Challenges\n"
+                "- Latency in Observe-Think-Act loop\n"
+                "- Error correction & self-healing (backtrack on misclicks)\n"
+                "- Security (HITL for sensitive actions)\n"
+                "- Context persistence across sessions (vector DB / knowledge graph)\n\n"
+                "### Reference Frameworks\n"
+                "- Self-Operating Computer (GPT-4o Vision desktop automation)\n"
+                "- Open Interpreter (local code execution)\n"
+                "- HyperWrite Personal Assistant (browser autonomy)\n"
+                "- Multi-On (web agent for forms/checkouts)",
+                '["self-os","architecture","agents","automation","knowledge"]',
+                "system",
+                time.time(),
+                "[]",
+            ),
+        )
+    conn.commit()
     conn.close()
 
 init_db()
