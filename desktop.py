@@ -21,10 +21,27 @@ def _start_server(port):
     httpd.serve_forever()
 
 
+def _wait_for_server(port, timeout=10):
+    import time
+    start = time.time()
+    while time.time() - start < timeout:
+        try:
+            with socket.create_connection(("127.0.0.1", port), timeout=1):
+                return True
+        except (ConnectionRefusedError, OSError, socket.timeout):
+            time.sleep(0.2)
+    return False
+
+
 def main():
     port = _find_free_port()
     t = threading.Thread(target=_start_server, args=(port,), daemon=True)
     t.start()
+
+    if not _wait_for_server(port):
+        import sys
+        print("ERROR: Server failed to start within 10s", file=sys.stderr)
+        sys.exit(1)
 
     import webview
     webview.create_window(
