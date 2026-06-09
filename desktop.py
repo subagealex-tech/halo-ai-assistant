@@ -36,6 +36,7 @@ def main():
         resizable=True,
         text_select=True,
     )
+    webview.start()
 
 
 if __name__ == "__main__":
